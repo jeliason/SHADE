@@ -73,8 +73,8 @@ SHADE includes tools for:
 
 If you use SHADE in your work, please cite the accompanying paper (forthcoming). Key references include:
 
-- Baddeley et al. (2014), "On logistic regression for spatial Gibbs point processes"
-- Grabarnik and Särkkä (2009), "Modelling the directional interactions in multitype point patterns"
+- Baddeley et al. (2014), "Logistic regression for spatial Gibbs point processes"
+- Grabarnik and Särkkä (2009), "Modelling the spatial structure of forest stands by multivariate point processes with hierarchical interactions"
 
 ## License
 

@@ -1,5 +1,3 @@
-# Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
-# Need help debugging build failures? Start at https://github.com/r-lib/actions#where-to-find-help
 on: [push, pull_request]
 
 name: check
@@ -33,19 +31,31 @@ jobs:
           http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
 
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: |
+            any::rcmdcheck
+            any::cmdstanr
+            any::rmarkdown
+            any::knitr
+            local::.
+          needs: check
+          cache-version: 2
+
+      - name: Cache CmdStan build
+        uses: actions/cache@v3
+        with:
+          path: ~/.cmdstan
+          key: ${{ runner.os }}-cmdstan-2
+
       - name: Install CmdStan
         shell: Rscript {0}
         run: |
-          install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
           cmdstanr::check_cmdstan_toolchain(fix = TRUE)
-          cmdstanr::install_cmdstan()
+          if (!cmdstanr::cmdstan_version() > "0.0.0") {
+            cmdstanr::install_cmdstan()
+          }
 
-      - uses: r-lib/actions/setup-r-dependencies@v2
-        with:
-          extra-packages: any::rcmdcheck, local::.
-          needs: check
-          cache-version: 2
-    
       - uses: r-lib/actions/check-r-package@v2
         with:
           upload-snapshots: true
