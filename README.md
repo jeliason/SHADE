@@ -13,7 +13,7 @@ To install the development version locally:
 install.packages(c("devtools", "cmdstanr"))
 
 # Install SHADE from local source or GitHub
-devtools::install_local("path/to/SHADE")  # or install_github("yourname/SHADE")
+devtools::install_local("path/to/SHADE")  # or install_github("jeliason/SHADE")
 ```
 
 During development, load with:
@@ -57,7 +57,7 @@ rvars <- as_draws_rvars(fit$draws())
 summary <- summarise_draws(rvars$beta_global)
 ```
 
-For a complete end-to-end example, see the file `vignettes/shade_workflow_demo.Rmd`.
+For a complete end-to-end example, see the file `vignettes/Introduction.Rmd`.
 
 ## Package Overview
 
