@@ -1,18 +1,38 @@
-Package: example
+Package: SHADE
 Type: Package
-Title: Example Package With Instantiate
+Title: Spatial Hierarchical Asymmetry via Directional Estimation
 Version: 0.0.1
-Author: You
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: Demonstrate how to create an R package with pre-compiled Stan
-  models.
+Author: Joel Eliason
+Maintainer: Joel Eliason <joel.eliason119@gmail.com>
+Description: A Bayesian hierarchical model for directional cell-cell interactions in spatial imaging data.
 Depends:
   R (>= 4.0.0)
 Imports:
-  instantiate
+    dplyr,
+    instantiate,
+    jsonlite,
+    magrittr,
+    Matrix,
+    progressr,
+    spatstat.explore,
+    spatstat.geom,
+    spatstat.random,
+    stringr,
+    tibble,
+    tidyr,
+    methods,
+    stats
 Additional_repositories:
   https://mc-stan.org/r-packages/
 SystemRequirements: CmdStan (https://mc-stan.org/users/interfaces/cmdstan)
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.2
+VignetteBuilder: knitr
+Suggests: 
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown,
+    posterior
+Config/testthat/edition: 3
+License: MIT + file LICENSE
