@@ -52,6 +52,12 @@ jobs:
         shell: Rscript {0}
         run: |
           cmdstanr::check_cmdstan_toolchain(fix = TRUE)
+
+          # Set CmdStan path explicitly (in case it was restored from cache)
+          cmdstan_dir <- fs::dir_ls("~/.cmdstan", type = "directory", recurse = FALSE)[1]
+          cmdstanr::set_cmdstan_path(cmdstan_dir)
+
+          # Install CmdStan only if not already installed
           if (!cmdstanr::cmdstan_version() > "0.0.0") {
             cmdstanr::install_cmdstan()
           }
