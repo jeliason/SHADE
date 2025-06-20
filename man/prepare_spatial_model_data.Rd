@@ -31,7 +31,7 @@ prepare_spatial_model_data(
 
 \item{image_id}{Character or factor vector of image/sample IDs.}
 
-\item{patient_metadata}{A data frame with columns: 'Spot', 'Patient', and 'Group'.}
+\item{patient_metadata}{A data frame with columns: 'Spot', 'Patient','Group' and 'Category'.}
 
 \item{n_dummy}{Number of dummy points for quadrature (default: 1000).}
 

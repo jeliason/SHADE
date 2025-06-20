@@ -7,7 +7,7 @@
 #' @param y Numeric vector of y-coordinates.
 #' @param cell_type Factor or character vector of cell types (filtered).
 #' @param image_id Character or factor vector of image/sample IDs.
-#' @param patient_metadata A data frame with columns: 'Spot', 'Patient', and 'Group'.
+#' @param patient_metadata A data frame with columns: 'Spot', 'Patient' and'Group'.
 #' @param n_dummy Number of dummy points for quadrature (default: 1000).
 #' @param type_idx Index of the cell type to model (default: 1).
 #' @param path Optional directory path to write output files. If NULL, returns data in memory.
@@ -45,9 +45,26 @@ prepare_spatial_model_data <- function(
     stop("patient_metadata must be a data.frame with columns: Spot, Patient, Group")
   }
   
+  if(!is.factor(image_id)) {
+    stop("image_id must be a factor!")
+  }
+  
   spots_pt <- patient_metadata[patient_metadata$Spot %in% image_id, , drop = FALSE]
-  sample_to_indiv <- spots_pt$Patient |> as.factor() |> as.integer()
-  indiv_to_group <- spots_pt |> dplyr::distinct(Patient, Group) |> dplyr::pull(Group) |> as.factor() |> as.integer()
+  patient_ids <- unique(spots_pt$Patient)
+  sample_to_indiv <- match(spots_pt$Patient, patient_ids)
+  num_indiv <- length(patient_ids)
+  
+  if(all(is.na(spots_pt$Group))) {
+    indiv_to_group <- rep(0, length(patient_ids))
+    num_pt_groups <- 0
+  } else {
+    patient_to_group <- setNames(spots_pt$Group[!duplicated(spots_pt$Patient)], 
+                                 spots_pt$Patient[!duplicated(spots_pt$Patient)])
+    group_ids <- unique(spots_pt$Group[!is.na(spots_pt$Group)])
+    indiv_to_group <- match(patient_to_group[patient_ids], group_ids)
+    indiv_to_group[is.na(indiv_to_group)] <- 0
+    num_pt_groups <- length(group_ids)
+  }
   
   df_all <- tibble::tibble(X = x, Y = y, type = cell_type, Spot = image_id)
   dats <- split(df_all, df_all$Spot)
@@ -114,10 +131,10 @@ prepare_spatial_model_data <- function(
   }) %>% do.call(rbind,.)
   
   data_stan <- list(
-    num_indiv = length(unique(spots_pt$Patient)),
+    num_indiv = num_indiv,
     num_types = length(unique_types),
     num_pot = n_basis_functions,
-    num_pt_groups = length(unique(spots_pt$Group)),
+    num_pt_groups = num_pt_groups,
     n_cells = nrow(x_cells),
     d_cells = ncol(x_cells),
     is_cell = is_cell,

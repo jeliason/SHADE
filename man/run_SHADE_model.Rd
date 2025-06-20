@@ -4,12 +4,14 @@
 \alias{run_SHADE_model}
 \title{Fit the SHADE model.}
 \usage{
-run_SHADE_model(data_stan, ...)
+run_SHADE_model(data_stan, method = "sample", ...)
 }
 \arguments{
 \item{data_stan}{list of arguments needed for SHADE model}
 
-\item{...}{Named arguments to the `sample()` method of CmdStan model
+\item{method}{Character string specifying the inference method: "sample" for MCMC sampling (default) or "variational" for variational inference}
+
+\item{...}{Named arguments to the `sample()` or `variational()` method of CmdStan model
 objects: <https://mc-stan.org/cmdstanr/reference/model-method-sample.html>}
 }
 \value{
@@ -17,5 +19,9 @@ Model fit
 }
 \description{
 Fit the SHADE Stan model and return fit
+}
+\seealso{
+Other models: 
+\code{\link{run_SHADE_gq}()}
 }
 \concept{models}
