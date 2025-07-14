@@ -9,4 +9,4 @@ inst/stan/**/*.exe
 inst/stan/**/*.EXE
 *.dll
 *.Rproj
-
+*_cache/

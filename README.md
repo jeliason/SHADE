@@ -1,25 +1,23 @@
 # SHADE: Spatial Hierarchical Asymmetry via Directional Estimation
 
-SHADE is an R package for modeling asymmetric spatial associations between cell types in tissue images using a hierarchical Bayesian framework. It is designed for high-resolution spatial data from technologies such as multiplexed immunofluorescence (mIF) and CODEX.
+SHADE is an R package for modeling asymmetric spatial associations between cell types in tissue images using a multilevel Bayesian framework.
 
-SHADE captures directional spatial interactions using nonparametric spatial interaction curves (SICs) and models variation across biological levels, including images, patients, and cohorts. The model is implemented in Stan and fit using the logistic regression approximation for conditional intensity functions.
+Spatial relationships in tissue microenvironments are often directional—for example, immune cells may localize near tumor cells as part of immune surveillance, while tumor cell positions may be governed more by vasculature and tissue structure. These associations are not necessarily reciprocal, and conventional spatial models that assume symmetry or analyze each image independently fail to capture this critical asymmetry.
+
+SHADE addresses this by modeling conditional spatial intensity—that is, how the presence of one or more *source* cell types predict the spatial distribution of a *target* cell type. These relationships are summarized using Spatial Interaction Curves (SICs), which quantify how the expected density of the target cell type varies with distance from the source. SICs offer a smooth, interpretable, and biologically grounded representation of directional interactions across spatial scales.
+
+Additionally, biological data from spatial imaging studies are often hierarchically structured, with tissue images nested within patients and patients within cohorts. SHADE explicitly models this structure, enabling partial pooling and uncertainty quantification across levels to improve inference in sparse or heterogeneous datasets.
+
+The model is implemented in Stan and uses a logistic regression approximation to estimate conditional intensity functions efficiently, even for large high-resolution datasets.
+
+For more technical details and case studies, please see [our preprint](https://doi.org/10.1101/2025.06.24.661393).
 
 ## Installation
 
-To install the development version locally:
+To install from Github:
 
 ```r
-# Install dependencies
-install.packages(c("devtools", "cmdstanr"))
-
-# Install SHADE from local source or GitHub
-devtools::install_local("path/to/SHADE")  # or install_github("jeliason/SHADE")
-```
-
-During development, load with:
-
-```r
-devtools::load_all()
+devtools::install_github("jeliason/SHADE")
 ```
 
 ## Basic Usage
@@ -64,17 +62,25 @@ For a complete end-to-end example, see the file `vignettes/Introduction.Rmd`.
 SHADE includes tools for:
 
 - Preparing spatial point pattern data for hierarchical analysis
-- Defining flexible spatial interaction features via radial basis functions
+- Defining flexible spatial interaction features via basis functions
 - Fitting multilevel spatial point process models using Stan
 - Summarizing posterior distributions of interaction curves
 - Comparing results across images, patients, and groups
 
 ## Citation and References
 
-If you use SHADE in your work, please cite the accompanying paper (forthcoming). Key references include:
+If you use SHADE in your work, please cite the accompanying preprint:
 
-- Baddeley et al. (2014), "Logistic regression for spatial Gibbs point processes"
-- Grabarnik and Särkkä (2009), "Modelling the spatial structure of forest stands by multivariate point processes with hierarchical interactions"
+```bibtex
+@misc{,
+  title = {{{SHADE}}: {{A Multilevel Bayesian Approach}} to {{Modeling Directional Spatial Associations}} in {{Tissues}}},
+  author = {Eliason, Joel and Peruzzi, Michele and Rao, Arvind},
+  year = {2025},
+  month = jun,
+  publisher = {Cold Spring Harbor Laboratory},
+  doi = {10.1101/2025.06.24.661393},
+}
+```
 
 ## License
 

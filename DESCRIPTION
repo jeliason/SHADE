@@ -3,7 +3,7 @@ Type: Package
 Title: Spatial Hierarchical Asymmetry via Directional Estimation
 Version: 0.0.1
 Author: Joel Eliason
-Maintainer: Joel Eliason <joel.eliason119@gmail.com>
+Maintainer: Joel Eliason <joelne@umich.edu>
 Description: A Bayesian hierarchical model for directional cell-cell interactions in spatial imaging data.
 Depends:
   R (>= 4.0.0)
