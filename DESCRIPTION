@@ -28,11 +28,12 @@ SystemRequirements: CmdStan (https://mc-stan.org/users/interfaces/cmdstan)
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.3.2
-VignetteBuilder: knitr
+VignetteBuilder: quarto
 Suggests: 
     testthat (>= 3.0.0),
+    quarto,
     knitr,
     rmarkdown,
     posterior
 Config/testthat/edition: 3
-License: MIT + file LICENSE
+License: MIT

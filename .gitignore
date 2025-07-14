@@ -10,3 +10,6 @@ inst/stan/**/*.EXE
 *.dll
 *.Rproj
 *_cache/
+*_files/
+.DS_Store
+*.html

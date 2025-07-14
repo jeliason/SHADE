@@ -24,7 +24,9 @@ run_SHADE_model <- function(data_stan, method = "sample", ...) {
 #' @family models
 #' @description Generate predictions
 #' @return Model fit
-#' @param data_stan list of arguments needed for SHADE model
+#' @param data_gq list of arguments needed for SHADE generated-quantities
+#' @param draws_fit Model fit from `run_SHADE_model`
+#' @param ... Named arguments to the `generate_quantities()` method of CmdStan model
 #'   objects: <https://mc-stan.org/cmdstanr/reference/model-method-sample.html>
 run_SHADE_gq <- function(data_gq, draws_fit, ...) {
   model <- instantiate::stan_package_model(name = "SHADE_gq", package = "SHADE")

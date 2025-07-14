@@ -4,7 +4,7 @@ test_that("prepare_spatial_model_data works with fake data", {
   n_cells <- 100
   x <- runif(n_cells, 0, 100)
   y <- runif(n_cells, 0, 100)
-  image_id <- sample(paste0("img", 1:4), n_cells, replace = TRUE)
+  image_id <- factor(sample(paste0("img", 1:4), n_cells, replace = TRUE))
   cell_type <- sample(c("Tcell", "Bcell"), n_cells, replace = TRUE)
   
   # Create minimal patient metadata

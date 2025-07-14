@@ -8,3 +8,7 @@
 ^\.Rproj\.user$
 ^NOTICE$
 ^LICENSE\.md$
+^vignettes/.*\.html$
+^vignettes/.*\.pdf$
+^vignettes/.*_files/
+^vignettes/.*_cache/

@@ -7,7 +7,11 @@
 run_SHADE_gq(data_gq, draws_fit, ...)
 }
 \arguments{
-\item{data_stan}{list of arguments needed for SHADE model
+\item{data_gq}{list of arguments needed for SHADE generated-quantities}
+
+\item{draws_fit}{Model fit from `run_SHADE_model`}
+
+\item{...}{Named arguments to the `generate_quantities()` method of CmdStan model
 objects: <https://mc-stan.org/cmdstanr/reference/model-method-sample.html>}
 }
 \value{
