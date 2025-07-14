@@ -48,17 +48,19 @@ jobs:
           path: ~/.cmdstan
           key: ${{ runner.os }}-cmdstan-2
 
-      - name: Install CmdStan
+      - name: Install (or reuse) CmdStan
         shell: Rscript {0}
         run: |
           cmdstanr::check_cmdstan_toolchain(fix = TRUE)
-
-          # Set CmdStan path explicitly (in case it was restored from cache)
-          cmdstan_dir <- fs::dir_ls("~/.cmdstan", type = "directory", recurse = FALSE)[1]
-          cmdstanr::set_cmdstan_path(cmdstan_dir)
-
-          # Install CmdStan only if not already installed
-          if (!cmdstanr::cmdstan_version() > "0.0.0") {
+      
+          ## If the cache is present, point CmdStanR to it ---------------------------
+          if (dir.exists("~/.cmdstan")) {
+            cached <- fs::dir_ls("~/.cmdstan", type = "directory", recurse = FALSE)
+            if (length(cached)) cmdstanr::set_cmdstan_path(cached[1])
+          }
+      
+          ## Install CmdStan if nothing usable was found ----------------------------
+          if (!cmdstanr::cmdstan_available()) {
             cmdstanr::install_cmdstan()
           }
 

@@ -69,7 +69,7 @@ SHADE includes tools for:
 
 ## Citation and References
 
-If you use SHADE in your work, please cite the accompanying preprint:
+If you use SHADE in your work, please cite the accompanying [preprint](https://doi.org/10.1101/2025.06.24.661393):
 
 ```bibtex
 @misc{,
@@ -85,3 +85,9 @@ If you use SHADE in your work, please cite the accompanying preprint:
 ## License
 
 SHADE is released under the MIT license.
+
+## Contact
+
+Joel Eliason
+
+[joeleliason.com](https://joeleliason.com)
