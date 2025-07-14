@@ -60,7 +60,7 @@ jobs:
           }
       
           ## Install CmdStan if nothing usable was found ----------------------------
-          if (!cmdstanr::cmdstan_available()) {
+          if (is.null(cmdstanr::cmdstan_version(error_on_NA=FALSE))) {
             cmdstanr::install_cmdstan()
           }
 
