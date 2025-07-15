@@ -41,6 +41,7 @@ jobs:
           extra-packages: |
             any::cmdstanr
             any::testthat
+            any::devtools
             local::.
 
       - name: Install CmdStan
@@ -51,5 +52,5 @@ jobs:
 
       - name: Run tests
         run: |
-          testthat::test_dir("tests/testthat", reporter = "summary")
+          devtools::test()
         shell: Rscript {0}
