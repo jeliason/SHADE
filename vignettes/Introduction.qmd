@@ -1,14 +1,9 @@
 ---
-vignette: >
-  %\VignetteIndexEntry{SHADE Workflow Demo with Simulated Spatial Data}
-  %\VignetteEngine{quarto::html}
-  %\VignetteEncoding{UTF-8}
+title: SHADE Workflow Demo with Simulated Spatial Data
+format:
+  html: default
+  pdf: default
 ---
-<!-- title: "SHADE Workflow Demo with Simulated Spatial Data" -->
-<!-- format: -->
-<!--   html: default -->
-<!--   pdf: default -->
-<!-- --- -->
 
 ## Overview
 

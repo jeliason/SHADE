@@ -1,7 +1,7 @@
 # SHADE: Spatial Hierarchical Asymmetry via Directional Estimation
 
 <!-- badges: start -->
-[![R-CMD-check](https://github.com/jeliason/SHADE/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/jeliason/SHADE/actions/workflows/R-CMD-check.yaml)
+[![tests](https://github.com/jeliason/SHADE/actions/workflows/tests.yaml/badge.svg)](https://github.com/jeliason/SHADE/actions/workflows/tests.yaml)
 <!-- badges: end -->
 
 SHADE is an R package for modeling asymmetric spatial associations between cell types in tissue images using a multilevel Bayesian framework.
