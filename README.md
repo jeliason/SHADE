@@ -14,7 +14,7 @@ Additionally, biological data from spatial imaging studies are often hierarchica
 
 The model is implemented in Stan and uses a logistic regression approximation to estimate conditional intensity functions efficiently, even for large high-resolution datasets.
 
-For more technical details and case studies, please see [our preprint](https://doi.org/10.1101/2025.06.24.661393).
+For more technical details and case studies, please see [our preprint](https://doi.org/10.1101/2025.06.24.661393) and [our repo](https://github.com/jeliason/shade_paper_code) for reproducing analyses and figures from that manuscript.
 
 ## Installation
 
