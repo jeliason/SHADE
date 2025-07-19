@@ -24,7 +24,7 @@ To install from Github, first install CmdStanr and CmdStan:
 
 ``` r
 install.packages("cmdstanr", repos = c('https://stan-dev.r-universe.dev', getOption("repos")))
-cmdstanr::check_cmdstan_toolchain()
+cmdstanr::check_cmdstan_toolchain(fix = TRUE)
 cmdstanr::install_cmdstan()
 ```
 
