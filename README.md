@@ -20,7 +20,17 @@ For more technical details and case studies, please see [our preprint](https://d
 
 ## Installation
 
-To install from Github:
+To install from Github, first install CmdStanr and CmdStan:
+
+``` r
+install.packages("cmdstanr", repos = c('https://stan-dev.r-universe.dev', getOption("repos")))
+cmdstanr::check_cmdstan_toolchain()
+cmdstanr::install_cmdstan()
+```
+
+For problems installing CmdStanr and/or CmdStan, please see their documentation: <https://mc-stan.org/cmdstanr/>.
+
+Then install SHADE:
 
 ``` r
 devtools::install_github("jeliason/SHADE")
