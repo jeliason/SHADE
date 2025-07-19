@@ -8,7 +8,7 @@
 
 SHADE is an R package for modeling asymmetric spatial associations between cell types in tissue images using a multilevel Bayesian framework.
 
-Spatial relationships in tissue microenvironments are often directional—for example, immune cells may localize near tumor cells as part of immune surveillance, while tumor cell positions may be governed more by vasculature and tissue structure. These associations are not necessarily reciprocal, and conventional spatial models that assume symmetry or analyze each image independently fail to capture this critical asymmetry.
+Spatial relationships in tissue microenvironments are often directional—for example, immune cells may localize near tumor cells as part of immune surveillance, while tumor cell positions may be governed more by vasculature and tissue structure. These associations are not necessarily reciprocal, and conventional spatial models that assume symmetry fail to capture this critical asymmetry.
 
 SHADE addresses this by modeling conditional spatial intensity—that is, how the presence of one or more *source* cell types predict the spatial distribution of a *target* cell type. These relationships are summarized using Spatial Interaction Curves (SICs), which quantify how the expected density of the target cell type varies with distance from the source. SICs offer a smooth, interpretable, and biologically grounded representation of directional interactions across spatial scales.
 
