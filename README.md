@@ -1,7 +1,9 @@
 # SHADE: Spatial Hierarchical Asymmetry via Directional Estimation
 
 <!-- badges: start -->
+
 [![tests](https://github.com/jeliason/SHADE/actions/workflows/tests.yaml/badge.svg)](https://github.com/jeliason/SHADE/actions/workflows/tests.yaml)
+
 <!-- badges: end -->
 
 SHADE is an R package for modeling asymmetric spatial associations between cell types in tissue images using a multilevel Bayesian framework.
@@ -20,14 +22,17 @@ For more technical details and case studies, please see [our preprint](https://d
 
 To install from Github:
 
-```r
+``` r
 devtools::install_github("jeliason/SHADE")
 ```
 
 ## Basic Usage
 
-```r
+``` r
 library(SHADE)
+library(dplyr)
+library(ggplot2)
+library(posterior)
 
 # Input data must include:
 # - x, y: spatial coordinates of cells
@@ -35,48 +40,80 @@ library(SHADE)
 # - image_id: identifier for each image or sample
 # - patient_metadata: a data.frame with columns 'Spot', 'Patient', and 'Group'
 
-# Example: preprocess spatial data into SHADE model input
+# Example: simulate spatial data with directional associations
+# (In practice, you would load your own spatial imaging data)
+
+set.seed(2025)
+out <- simulate_spatial_data(
+  n_images = 8,
+  n_patients = 4,
+  n_groups = 2,
+  cell_types = c("tumor", "immune", "stroma"),
+  target_type = "immune"  # immune cells attracted to tumor cells
+)
+
+coords <- out$data
+# Create patient metadata for hierarchical modeling
+patient_metadata <- data.frame(
+  Spot = unique(coords$image_id),
+  Patient = rep(c("pt_1", "pt_2"), each = 2),
+  Group = rep(c("group_A", "group_B"), each = 2)
+)
+
+# Visualize example spatial pattern
+coords %>%
+  filter(image_id == "img_1") %>%
+  ggplot(aes(x, y, color = cell_type)) +
+  geom_point() +
+  theme_minimal() +
+  labs(title = "Example Spatial Pattern")
+
+# Prepare data for SHADE model
 prep <- prepare_spatial_model_data(
   x = coords$x,
   y = coords$y,
-  cell_type = coords$type,
+  cell_type = coords$cell_type,
   image_id = coords$image_id,
-  patient_metadata = metadata,
-  type_idx = 3  # Index of target cell type
+  patient_metadata = patient_metadata,
+  type_idx = 2,  # Index of target cell type (immune)
+  n_basis_functions = 3
 )
 
 # Fit the SHADE model using Stan
 fit <- run_SHADE_model(
   prep$stan_data,
-  chains = 4,
-  iter_warmup = 500,
-  iter_sampling = 1000
+  method = "variational",
+  draws = 1e3,
+  threads = 2
 )
 
-# Summarize posterior estimates
-library(posterior)
+# Extract and summarize posterior estimates
 rvars <- as_draws_rvars(fit$draws())
 summary <- summarise_draws(rvars$beta_global)
+print(summary)
+
+# Plot Spatial Interaction Curves (SICs)
+plot_spatial_interaction_curves(fit, prep, distance_range = c(0, 100))
 ```
 
-For a complete end-to-end example, see the file `vignettes/Introduction.Rmd`.
+For a complete end-to-end example, see the file `vignettes/Introduction.qmd`.
 
 ## Package Overview
 
 SHADE includes tools for:
 
-- Preparing spatial point pattern data for hierarchical analysis
-- Defining flexible spatial interaction features via basis functions
-- Fitting multilevel spatial point process models using Stan
-- Summarizing posterior distributions of interaction curves
-- Comparing results across images, patients, and groups
+-   Preparing spatial point pattern data for hierarchical analysis
+-   Defining flexible spatial interaction features via basis functions
+-   Fitting multilevel spatial point process models using Stan
+-   Summarizing posterior distributions of interaction curves
+-   Comparing results across images, patients, and groups
 
 ## Citation and References
 
 If you use SHADE in your work, please cite the accompanying [preprint](https://doi.org/10.1101/2025.06.24.661393):
 
-```bibtex
-@misc{,
+``` bibtex
+@misc{
   title = {{{SHADE}}: {{A Multilevel Bayesian Approach}} to {{Modeling Directional Spatial Associations}} in {{Tissues}}},
   author = {Eliason, Joel and Peruzzi, Michele and Rao, Arvind},
   year = {2025},

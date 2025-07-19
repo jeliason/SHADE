@@ -35,136 +35,67 @@ library(spatstat.random)
 library(posterior)
 ```
 
-## 2. Set Simulation Parameters
+## 2. Simulate Spatial Data
 
-We simulate a small dataset of tissue images with three cell types. One of these is treated as the "target" cell type whose spatial intensity is influenced by the presence of others.
-
-```{r}
-num_pts_per_group <- 10
-images_per_pt     <- 2
-num_pt_groups <- 2
-num_pts <- num_pts_per_group * num_pt_groups
-
-num_types <- 3
-np <- 150 # number of cells per type
-ratio <- 2 # ratio of dummy points (for logistic approximation) to real points
-n_dummy <- floor(np * ratio)
-num_basis <- 3 # number of basis functions
-basis <- make_rbfs(n_basis_functions = num_basis,
-                        max_dist = 75, basis_function_sigma = 15)
-mean_alpha <- log(np / (1500^2)) # mean baseline intensity for each cell type
-
-params <- make_simulation_parameters(
-  mean_alpha = mean_alpha,
-  sigma_beta_global = 0.5,
-  sigma_beta_indiv  = 0.1,
-  sigma_beta_local  = 0.1,
-  scale_sigmas = 5,
-  num_pt_groups = num_pt_groups,
-  num_types = num_types,
-  num_combos = num_types - 1,
-  num_pot = num_basis,
-  indiv_to_group = rep(1:num_pt_groups, each=num_pts_per_group),
-  num_pts = num_pts,
-  num_images = num_pts * images_per_pt,
-  sample_to_indiv = rep(1:num_pts, each = images_per_pt),
-  seed = 2025
-)
-betas_local <- params$betas_local[-1, ]
-```
-
-## 3. Simulate Spatial Point Patterns
-
-We simulate images where target cell placement depends on background cell types. Conditional intensities are generated using spatial interaction fields, which are sums of RBFs weighted by coefficients.
+We simulate a small dataset of tissue images with three cell types using the new `simulate_spatial_data` function. This creates a hierarchical dataset where immune cells are spatially attracted to tumor cells.
 
 ```{r cache=TRUE}
-W <- owin(c(0, 1500), c(0, 1500))
-area <- 1500^2
-num_images <- num_pts * images_per_pt
+# Simulate spatial data with directional associations
+args <- list(
+  n_images = 40,
+  n_patients = 20,
+  n_groups = 2,
+  cell_types = c("tumor", "immune", "stroma"),
+  target_type = "stroma",  # stroma cells influenced by tumor and immune
+  n_cells_per_type = 150,
+  seed = 2025,
+  verbose = FALSE
+)
+sim_result <- do.call(simulate_spatial_data,args)
 
-sim_data <- lapply(1:num_images, function(i) {
-  # cat(paste0(i,"/",num_images,"\n"))
-  if (num_types == 2) {
-    pat <- rpoispp(lambda = np / area, win = W)
-    marks(pat) <- factor("t1")
-  } else {
-    pat <- rmpoispp(lambda = rep(np / area, num_types - 1), win = W)
-  }
+# Extract data and true parameters
+coords <- sim_result$data
+true_params <- sim_result$true_params
 
-  dens_list <- lapply(1:(num_types - 1), function(j) {
-    coeffs <- betas_local[((j - 1) * num_basis + 1):(j * num_basis), i]
-    custom_kernel <- Vectorize(function(x, y) {
-      d <- sqrt(x^2 + y^2)
-      sum(sapply(seq_along(coeffs),
-                 function(k) coeffs[k] * basis[[k]](d)))
-    })
-    subs <- unmark(subset(pat, marks == j))
-    smooth_density_fft(subs, custom_kernel, resolution = 128)
-  })
-
-  int_dens <- Reduce("+", dens_list)
-  lambda_integral <- sum(
-    exp(int_dens$v)) * (int_dens$xstep * int_dens$ystep)
-  beta0 <- log(np / lambda_integral)
-  target_pat <- rpoispp(lambda = exp(int_dens + beta0))
-  marks(target_pat) <- factor(num_types)
-
-  final_pat <- superimpose(pat, target_pat)
-  list(pat = final_pat, beta0 = beta0)
-})
-```
-
-Here is what an example point pattern from this simulated dataset would look like:
-
-```{r}
-sim_data[[1]]$pat %>%
-  as.data.frame() %>%
-  ggplot(aes(x,y,color=marks)) +
-  geom_point() +
-  theme_minimal() +
-  labs(x="X (microns)",y="Y (microns)",color="Type")
-```
-
-## 4. Prepare the Data for SHADE
-
-We extract spatial coordinates and cell type labels, and format metadata for hierarchical modeling. SHADE models variation across images, patients, and groups.
-
-```{r}
-coords <- do.call(rbind, lapply(seq_along(sim_data), function(i) {
-  pat <- sim_data[[i]]$pat
-  raw_marks <- as.character(pat$marks)
-  relabeled_marks <- paste0("t", raw_marks)
-
-  tibble(
-    x = pat$x,
-    y = pat$y,
-    type = factor(relabeled_marks, levels = paste0("t", 1:num_types)),
-    image_id = factor(paste0("img_", i))
-  )
-}))
-
+# Create patient metadata for hierarchical modeling
 image_ids <- levels(coords$image_id)
-patient_ids <- rep(paste0("pt_", 1:num_pts), each = images_per_pt)
+patient_ids <- rep(paste0("pt_", 1:20), each = 2)
 patient_metadata <- tibble(
   Spot = image_ids,
   Patient = patient_ids,
-  Group = rep(paste0("group_",1:num_pt_groups),
-              each=num_pts_per_group * images_per_pt)
-)
-
-prep <- prepare_spatial_model_data(
-  x = coords$x,
-  y = coords$y,
-  cell_type = coords$type,
-  image_id = coords$image_id,
-  patient_metadata = patient_metadata,
-  type_idx = num_types,
-  n_dummy = n_dummy,
-  n_basis_functions = num_basis
+  Group = rep(paste0("group_", 1:2), each = 20)
 )
 ```
 
-## 5. Fit the SHADE Model
+Here is what an example point pattern from this simulated dataset looks like:
+
+```{r}
+coords %>%
+  filter(image_id == "img_1") %>%
+  ggplot(aes(x, y, color = cell_type)) +
+  geom_point(alpha = 0.7) +
+  theme_minimal() +
+  labs(x = "X (microns)", y = "Y (microns)", color = "Cell Type")
+```
+
+## 3. Prepare the Data for SHADE
+
+We prepare the simulated data for SHADE modeling, specifying the target cell type and hierarchical structure.
+
+```{r}
+prep <- prepare_spatial_model_data(
+  x = coords$x,
+  y = coords$y,
+  cell_type = coords$cell_type,
+  image_id = coords$image_id,
+  patient_metadata = patient_metadata,
+  type_idx = 3,  # Index of target cell type (stroma)
+  n_dummy = 300,
+  n_basis_functions = 3
+)
+```
+
+## 4. Fit the SHADE Model
 
 We use a logistic regression approximation to fit the conditional intensity function. Inference is performed via HMC using `cmdstanr`.
 
@@ -172,6 +103,8 @@ We use a logistic regression approximation to fit the conditional intensity func
 set.seed(2025)
 fit <- run_SHADE_model(
   prep$stan_data,
+  # method="variational",
+  # draws=1e3,
   chains = 1,
   iter_warmup = 300,
   iter_sampling = 100,
@@ -180,136 +113,34 @@ fit <- run_SHADE_model(
 )
 ```
 
-## 6. Summarize Posterior Estimates
+## 5. Summarize Posterior Estimates
 
 We summarize the posterior draws for global-level coefficients using an `rvar` object. Posterior draws capture uncertainty in spatial association curves (SICs).
 
 ```{r}
 rvars <- posterior::as_draws_rvars(fit$draws())
 beta_global_rvar <- rvars$beta_global[-1, ]
-
-posterior_global_tbl <- posterior::summarise_draws(
-  beta_global_rvar, 
-  mean, median, sd, mad,
-  `5%` = ~quantile(.x, 0.05),
-  `95%` = ~quantile(.x, 0.95),
-  rhat, ess_bulk
-) %>%
-  filter(str_detect(variable, "\\[")) %>%
-  separate(variable, into = c("param", "row", "col"),
-           sep = "\\[|,|\\]", convert = TRUE) %>%
-  mutate(term = paste0("β_global[", row, "] (Group ", col, ")"))
-
-posterior_global_tbl %>%
-  select(term, mean, sd, `5%`, `95%`, rhat, ess_bulk) %>%
-  arrange(term)
+beta_global_rvar
 ```
-
-## 7. Compare to Ground Truth Coefficients
-
-We validate inference by comparing posterior estimates to the known coefficients used to generate the spatial interaction curves.
 
 ```{r}
-c(t(params$betas_global[-1, ]))
+true_params$betas_global[-1,]
 ```
 
-## 8. Visualize SICs across groups
+These coefficient estimates look quite close. Next, we can use these estimates to construct the main quantity of interest, the spatial interaction curves.
 
-Lastly, we construct the estimated SICs for both groups and compare them with the true SICs, along 
-with 95% simultaneous credible intervals for the estimated SICs.
+## 6. Visualize Spatial Interaction Curves
+
+We can now easily visualize the estimated SICs and compare them with the true curves:
 
 ```{r}
-alpha <- 0.05  # for 95% simultaneous bands
-x_seq <- seq(0, 80, 1)
-x_des <- lapply(basis, \(pot) pot(x_seq)) %>% do.call(cbind, .)
-
-# Loop over both groups
-plot_data <- lapply(1:2, function(i) {
-  # Linear predictor samples
-  lp <- x_des %*% rvars$beta_global[2:4, i]
-  beta_true <- params$betas_global[2:4, i]
-  lp_true <- as.vector(x_des %*% beta_true)
-
-  # Step 1: Extract mean and SD per x
-  df_summary <- lp %>%
-    as.matrix() %>%
-    as.data.frame() %>%
-    mutate(x = x_seq) %>%
-    mutate(
-      mn = as.vector(E(V1)),
-      sd = as.vector(sd(V1))
-    )
-
-  # Step 2: Standardize residuals across samples
-  lp_std <- lp %>%
-    as.matrix() %>%
-    as.data.frame() %>%
-    mutate(across(
-      everything(),
-      ~ (. - mean(.)) / sd(.)
-    ))
-
-  # Step 3: Max absolute deviation across x per sample
-  max_dev <- lp_std %>%
-    summarise(across(everything(), ~ max(abs(.)))) %>%
-    pivot_longer(everything(),
-                 names_to = "sample", values_to = "max_dev") %>%
-    pull(max_dev)
-
-  # Step 4: Critical value for simultaneous coverage
-  z_score_band <- quantile(max_dev, probs = 1 - alpha)
-
-  # Step 5: Simultaneous bands
-  df_summ <- df_summary %>%
-    mutate(
-      lo_simul = mn - z_score_band * sd,
-      hi_simul = mn + z_score_band * sd,
-      lp_true = lp_true,
-      group = paste0("Group ", i)
-    )
-
-  return(df_summ)
-}) %>% bind_rows()
-
-# Long-format for plotting
-df_lines <- plot_data %>%
-  select(x, group, mn, lp_true) %>%
-  pivot_longer(cols = c(mn, lp_true), 
-               names_to = "type", values_to = "value") %>%
-  mutate(type = ifelse(type == "mn", "Estimated", "True"))
-
-df_ribbons <- plot_data %>%
-  mutate(type = "Estimated") %>%
-  select(x, group, type, ymin = lo_simul, ymax = hi_simul)
-
-# Final plot
-p_final <- ggplot() +
-  geom_ribbon(data = df_ribbons,
-              aes(x = x, ymin = ymin, ymax = ymax, fill = group),
-              alpha = 0.2) +
-  geom_line(data = df_lines,
-            aes(x = x, y = value, color = group, linetype = type),
-            size = 1) +
-  geom_hline(yintercept = 0, color = "black", linetype = "dashed") +
-  scale_color_manual(
-    values = c("Group 1" = "#e6194b", "Group 2" = "#3cb44b")) +
-  scale_fill_manual(
-    values = c("Group 1" = "#e6194b", "Group 2" = "#3cb44b")) +
-  scale_linetype_manual(
-    values = c("Estimated" = "solid", "True" = "dashed")) +
-  labs(
-    x = "Distance (microns)",
-    y = "Estimated SIC",
-    color = "Group",
-    linetype = "Curve Type"
-  ) +
-  guides(fill = "none") +
-  theme_minimal()
-
-p_final
+plot_spatial_interaction_curves(fit, prep, true_params = true_params, distance_range = c(0, 80))
 ```
+
+The plot is faceted by source-target cell type interactions, showing how the stroma target cell type is influenced by each source cell type (tumor and immune). Each facet displays both the estimated curves (solid lines) with 95% simultaneous credible intervals (shaded regions) and the true curves used to generate the data (dashed lines). This allows us to validate that our Bayesian inference is successfully recovering the underlying spatial associations for each specific cell type interaction.
 
 ## Next Steps
 
-- Perform posterior predictive checks  
+- Performing posterior predictive checks - how well can the model predict the locations of stromal cells?
+- Visualizing the patient-level and image-level curves as well, and compare them with their group-level counterparts.
 - Apply SHADE to real multiplexed imaging data  

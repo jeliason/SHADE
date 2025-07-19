@@ -272,7 +272,10 @@ make_dispersions <- function(Q,
   # Order columns by cell type interaction (optional but consistent)
   col_names <- colnames(data)
   interaction_ids <- stringr::str_extract(col_names, "_[A-Za-z0-9+ ]+_[A-Za-z0-9+ ]+")
-  col_order <- order(interaction_ids)
+  source_types <- stringr::str_replace(interaction_ids,paste0("_",focal_cell,"_"),"")
+  lvs <- levels(m)
+  lvs <- lvs[which(lvs != focal_cell)]
+  col_order <- order(match(source_types,lvs))
   data <- data[, col_order]
   
   return(data)
