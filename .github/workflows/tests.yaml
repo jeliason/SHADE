@@ -47,6 +47,34 @@ jobs:
             any::testthat
             any::devtools
             local::.
+            
+
+      # --- (Windows only): ensure Rtools44 paths on PATH ---
+      - name: Add Rtools to PATH
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          $paths = @(
+            'C:\rtools44\usr\bin',
+            'C:\rtools44\ucrt64\bin'
+          )
+          $paths | ForEach-Object {
+            if (Test-Path $_) {
+              echo "Adding $_ to PATH"
+              echo $_ >> $env:GITHUB_PATH
+            } else {
+              Write-Host "Path missing (ignore if not needed): $_"
+            }
+          }
+
+      - name: Verify toolchain (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+            where make
+            where g++
+            g++ --version
+            make --version
 
       - name: Install CmdStan
         shell: Rscript {0}
