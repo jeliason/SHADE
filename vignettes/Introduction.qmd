@@ -33,6 +33,10 @@ library(Matrix)
 library(spatstat.geom)
 library(spatstat.random)
 library(posterior)
+
+if (!dir.exists("Introduction_cache")) {
+  dir.create("Introduction_cache")
+}
 ```
 
 ## 2. Simulate Spatial Data
