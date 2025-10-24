@@ -5,11 +5,19 @@
 #' @return Model fit
 #' @param data_stan list of arguments needed for SHADE model
 #' @param method Character string specifying the inference method: "sample" for MCMC sampling (default) or "variational" for variational inference
+#' @param parameterization Character string specifying the parameterization: "centered" for centered parameterization (default) or "non_centered" for non-centered parameterization. Non-centered parameterization can improve sampling efficiency when hierarchical variance parameters are small.
 #' @param ... Named arguments to the `sample()` or `variational()` method of CmdStan model
 #'   objects: <https://mc-stan.org/cmdstanr/reference/model-method-sample.html>
-run_SHADE_model <- function(data_stan, method = "sample", ...) {
-  model <- instantiate::stan_package_model(name = "SHADE", package = "SHADE")
-  
+run_SHADE_model <- function(data_stan, method = "sample", parameterization = "centered", ...) {
+  # Select model based on parameterization
+  if (parameterization == "centered") {
+    model <- instantiate::stan_package_model(name = "SHADE", package = "SHADE")
+  } else if (parameterization == "non_centered") {
+    model <- instantiate::stan_package_model(name = "SHADE_ncp", package = "SHADE")
+  } else {
+    stop("parameterization must be either 'centered' or 'non_centered'")
+  }
+
   if (method == "sample") {
     model$sample(data = data_stan, ...)
   } else if (method == "variational") {
