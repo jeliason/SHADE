@@ -4,12 +4,19 @@
 \alias{run_SHADE_model}
 \title{Fit the SHADE model.}
 \usage{
-run_SHADE_model(data_stan, method = "sample", ...)
+run_SHADE_model(
+  data_stan,
+  method = "sample",
+  parameterization = "centered",
+  ...
+)
 }
 \arguments{
 \item{data_stan}{list of arguments needed for SHADE model}
 
 \item{method}{Character string specifying the inference method: "sample" for MCMC sampling (default) or "variational" for variational inference}
+
+\item{parameterization}{Character string specifying the parameterization: "centered" for centered parameterization (default) or "non_centered" for non-centered parameterization. Non-centered parameterization can improve sampling efficiency when hierarchical variance parameters are small.}
 
 \item{...}{Named arguments to the `sample()` or `variational()` method of CmdStan model
 objects: <https://mc-stan.org/cmdstanr/reference/model-method-sample.html>}

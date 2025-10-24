@@ -24,7 +24,6 @@ parameters {
   real<lower=0> sigma_beta_local;
   vector<lower=0>[num_pt_groups > 0 ? 1 : 0] tau_alpha_global;
   real<lower=0> tau_alpha_indiv;
-  real<lower=0> tau_alpha_local;
 }
 
 generated quantities {
