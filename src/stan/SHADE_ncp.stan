@@ -120,7 +120,8 @@ transformed parameters {
   array[n_samples] vector[d_cells] beta_local;
 
   // Non-centered parameterization for beta_global
-  if (num_pt_groups > 0) {
+  if (num_pt_groups > 1) {
+    // Multiple groups: estimate between-group variance
     // Intercept row
     beta_global[1, :] = mean_alpha + tau_alpha_global[1] * beta_global_raw[1, :];
 
@@ -132,6 +133,20 @@ transformed parameters {
     // Non-centered parameterization for beta_indiv
     for (i in 1:num_indiv) {
       beta_indiv[:,i] = beta_global[:, indiv_to_group[i]] + sigma_beta_indiv[1] * beta_indiv_raw[:,i];
+    }
+  } else if (num_pt_groups == 1) {
+    // Single group: beta_global is fixed population mean (no between-group variance)
+    // Intercept row
+    beta_global[1, :] = mean_alpha + scale_sigma_alpha * beta_global_raw[1, :];
+
+    // Other rows (interaction coefficients)
+    for (j in 1:num_pot) {
+      beta_global[beta_idx[:,j], :] = scale_sigma_betas[j] * beta_global_raw[beta_idx[:,j], :];
+    }
+
+    // Non-centered parameterization for beta_indiv
+    for (i in 1:num_indiv) {
+      beta_indiv[:,i] = beta_global[:, 1] + sigma_beta_indiv[1] * beta_indiv_raw[:,i];
     }
   } else {
     // No groups: beta_indiv is the top level
@@ -165,13 +180,18 @@ model {
   }
 
   // --- Priors on scale parameters ---
-  if (num_pt_groups > 0) {
+  if (num_pt_groups > 1) {
+    // Multiple groups: estimate between-group variance
     for (j in 1:num_pot) {
       sigma_beta_global[j] ~ normal(scale_sigma_betas[j], scale_sigma_betas[j]);
     }
     tau_alpha_global ~ normal(scale_sigma_alpha, 10);
     sigma_beta_indiv ~ normal(0, scale_sigmas);
+  } else if (num_pt_groups == 1) {
+    // Single group: no between-group variance to estimate
+    sigma_beta_indiv ~ normal(0, scale_sigmas);
   } else {
+    // No groups: beta_indiv has structured priors
     for (j in 1:num_pot) {
       sigma_beta_indiv[j] ~ normal(scale_sigma_betas[j], scale_sigma_betas[j]);
     }

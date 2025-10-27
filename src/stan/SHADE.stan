@@ -112,7 +112,8 @@ parameters {
 
 model {
   // --- Patient priors ---
-  if (num_pt_groups > 0) {
+  if (num_pt_groups > 1) {
+    // Multiple groups: estimate between-group variance
     for (j in 1:num_pot) {
       sigma_beta_global[j] ~ normal(scale_sigma_betas[j], scale_sigma_betas[j]);
       to_vector(beta_global[beta_idx[:,j], :]) ~ normal(0, sigma_beta_global[j]);
@@ -124,7 +125,19 @@ model {
     for (i in 1:num_indiv) {
       beta_indiv[:,i] ~ normal(beta_global[, indiv_to_group[i]], sigma_beta_indiv[1]);
     }
+  } else if (num_pt_groups == 1) {
+    // Single group: beta_global is fixed population mean (no between-group variance to estimate)
+    for (j in 1:num_pot) {
+      to_vector(beta_global[beta_idx[:,j], :]) ~ normal(0, scale_sigma_betas[j]);
+    }
+    to_vector(beta_global[1, :]) ~ normal(mean_alpha, scale_sigma_alpha);
+
+    sigma_beta_indiv ~ normal(0, scale_sigmas);
+    for (i in 1:num_indiv) {
+      beta_indiv[:,i] ~ normal(beta_global[:, 1], sigma_beta_indiv[1]);
+    }
   } else {
+    // No groups: beta_indiv is top level
     for (j in 1:num_pot) {
       sigma_beta_indiv[j] ~ normal(scale_sigma_betas[j], scale_sigma_betas[j]);
       to_vector(beta_indiv[beta_idx[:,j], :]) ~ normal(0, sigma_beta_indiv[j]);
