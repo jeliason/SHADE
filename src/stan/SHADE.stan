@@ -59,6 +59,7 @@ data {
   int<lower=1> n_samples;
   array[n_samples] int<lower=1,upper=num_indiv> sample_to_indiv;
   array[n_samples,2] int<lower=1,upper=n_cells> y_start_stop;
+  array[n_samples] int<lower=0,upper=1> is_single_image_patient;  // 1 if patient has only 1 image
 
   // Sparse matrix (CSR) structure
   int n_nz;
@@ -136,10 +137,13 @@ model {
   tau_alpha_indiv ~ normal(0, scale_sigmas);
 
   for (s in 1:n_samples) {
-    beta_local[s] ~ normal(
-      beta_indiv[:, sample_to_indiv[s]],
-      sigma_beta_local
-    );
+    if (is_single_image_patient[s] == 1) {
+      // For single-image patients, collapse image-level variance (use tiny sigma to avoid numerical issues)
+      beta_local[s] ~ normal(beta_indiv[:, sample_to_indiv[s]], 1e-6);
+    } else {
+      // For multi-image patients, use full hierarchical variance
+      beta_local[s] ~ normal(beta_indiv[:, sample_to_indiv[s]], sigma_beta_local);
+    }
   }
 
   // --- Likelihood ---

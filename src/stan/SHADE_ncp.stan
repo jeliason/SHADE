@@ -59,6 +59,7 @@ data {
   int<lower=1> n_samples;
   array[n_samples] int<lower=1,upper=num_indiv> sample_to_indiv;
   array[n_samples,2] int<lower=1,upper=n_cells> y_start_stop;
+  array[n_samples] int<lower=0,upper=1> is_single_image_patient;  // 1 if patient has only 1 image
 
   // Sparse matrix (CSR) structure
   int n_nz;
@@ -145,7 +146,13 @@ transformed parameters {
 
   // Non-centered parameterization for beta_local
   for (s in 1:n_samples) {
-    beta_local[s] = beta_indiv[:, sample_to_indiv[s]] + sigma_beta_local * beta_local_raw[s];
+    if (is_single_image_patient[s] == 1) {
+      // For single-image patients, collapse image-level variance
+      beta_local[s] = beta_indiv[:, sample_to_indiv[s]] + 1e-6 * beta_local_raw[s];
+    } else {
+      // For multi-image patients, use full hierarchical variance
+      beta_local[s] = beta_indiv[:, sample_to_indiv[s]] + sigma_beta_local * beta_local_raw[s];
+    }
   }
 }
 
