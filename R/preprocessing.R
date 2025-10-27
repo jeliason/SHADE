@@ -129,7 +129,11 @@ prepare_spatial_model_data <- function(
     row_stop <- start_stop_idx[i, 2]
     c(u[row_start], u[row_stop + 1] - 1)
   }) %>% do.call(rbind,.)
-  
+
+  # Detect single-image patients for adaptive hierarchy
+  images_per_patient <- table(sample_to_indiv)
+  is_single_image_patient <- as.integer(images_per_patient[sample_to_indiv] == 1)
+
   data_stan <- list(
     num_indiv = num_indiv,
     num_types = length(unique_types),
@@ -149,6 +153,7 @@ prepare_spatial_model_data <- function(
     w = w,
     v = v,
     u = u,
+    is_single_image_patient = is_single_image_patient,
     mean_alpha = mean_alpha,
     scale_sigmas = scale_sigmas,
     scale_sigma_betas = scale_sigma_betas,

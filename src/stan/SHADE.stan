@@ -59,6 +59,7 @@ data {
   int<lower=1> n_samples;
   array[n_samples] int<lower=1,upper=num_indiv> sample_to_indiv;
   array[n_samples,2] int<lower=1,upper=n_cells> y_start_stop;
+  array[n_samples] int<lower=0,upper=1> is_single_image_patient;  // 1 if patient has only 1 image
 
   // Sparse matrix (CSR) structure
   int n_nz;
@@ -111,7 +112,8 @@ parameters {
 
 model {
   // --- Patient priors ---
-  if (num_pt_groups > 0) {
+  if (num_pt_groups > 1) {
+    // Multiple groups: estimate between-group variance
     for (j in 1:num_pot) {
       sigma_beta_global[j] ~ normal(scale_sigma_betas[j], scale_sigma_betas[j]);
       to_vector(beta_global[beta_idx[:,j], :]) ~ normal(0, sigma_beta_global[j]);
@@ -123,7 +125,19 @@ model {
     for (i in 1:num_indiv) {
       beta_indiv[:,i] ~ normal(beta_global[, indiv_to_group[i]], sigma_beta_indiv[1]);
     }
+  } else if (num_pt_groups == 1) {
+    // Single group: beta_global is fixed population mean (no between-group variance to estimate)
+    for (j in 1:num_pot) {
+      to_vector(beta_global[beta_idx[:,j], :]) ~ normal(0, scale_sigma_betas[j]);
+    }
+    to_vector(beta_global[1, :]) ~ normal(mean_alpha, scale_sigma_alpha);
+
+    sigma_beta_indiv ~ normal(0, scale_sigmas);
+    for (i in 1:num_indiv) {
+      beta_indiv[:,i] ~ normal(beta_global[:, 1], sigma_beta_indiv[1]);
+    }
   } else {
+    // No groups: beta_indiv is top level
     for (j in 1:num_pot) {
       sigma_beta_indiv[j] ~ normal(scale_sigma_betas[j], scale_sigma_betas[j]);
       to_vector(beta_indiv[beta_idx[:,j], :]) ~ normal(0, sigma_beta_indiv[j]);
@@ -136,10 +150,13 @@ model {
   tau_alpha_indiv ~ normal(0, scale_sigmas);
 
   for (s in 1:n_samples) {
-    beta_local[s] ~ normal(
-      beta_indiv[:, sample_to_indiv[s]],
-      sigma_beta_local
-    );
+    if (is_single_image_patient[s] == 1) {
+      // For single-image patients, collapse image-level variance (use tiny sigma to avoid numerical issues)
+      beta_local[s] ~ normal(beta_indiv[:, sample_to_indiv[s]], 1e-6);
+    } else {
+      // For multi-image patients, use full hierarchical variance
+      beta_local[s] ~ normal(beta_indiv[:, sample_to_indiv[s]], sigma_beta_local);
+    }
   }
 
   // --- Likelihood ---

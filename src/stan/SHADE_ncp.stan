@@ -59,6 +59,7 @@ data {
   int<lower=1> n_samples;
   array[n_samples] int<lower=1,upper=num_indiv> sample_to_indiv;
   array[n_samples,2] int<lower=1,upper=n_cells> y_start_stop;
+  array[n_samples] int<lower=0,upper=1> is_single_image_patient;  // 1 if patient has only 1 image
 
   // Sparse matrix (CSR) structure
   int n_nz;
@@ -119,7 +120,8 @@ transformed parameters {
   array[n_samples] vector[d_cells] beta_local;
 
   // Non-centered parameterization for beta_global
-  if (num_pt_groups > 0) {
+  if (num_pt_groups > 1) {
+    // Multiple groups: estimate between-group variance
     // Intercept row
     beta_global[1, :] = mean_alpha + tau_alpha_global[1] * beta_global_raw[1, :];
 
@@ -131,6 +133,20 @@ transformed parameters {
     // Non-centered parameterization for beta_indiv
     for (i in 1:num_indiv) {
       beta_indiv[:,i] = beta_global[:, indiv_to_group[i]] + sigma_beta_indiv[1] * beta_indiv_raw[:,i];
+    }
+  } else if (num_pt_groups == 1) {
+    // Single group: beta_global is fixed population mean (no between-group variance)
+    // Intercept row
+    beta_global[1, :] = mean_alpha + scale_sigma_alpha * beta_global_raw[1, :];
+
+    // Other rows (interaction coefficients)
+    for (j in 1:num_pot) {
+      beta_global[beta_idx[:,j], :] = scale_sigma_betas[j] * beta_global_raw[beta_idx[:,j], :];
+    }
+
+    // Non-centered parameterization for beta_indiv
+    for (i in 1:num_indiv) {
+      beta_indiv[:,i] = beta_global[:, 1] + sigma_beta_indiv[1] * beta_indiv_raw[:,i];
     }
   } else {
     // No groups: beta_indiv is the top level
@@ -145,7 +161,13 @@ transformed parameters {
 
   // Non-centered parameterization for beta_local
   for (s in 1:n_samples) {
-    beta_local[s] = beta_indiv[:, sample_to_indiv[s]] + sigma_beta_local * beta_local_raw[s];
+    if (is_single_image_patient[s] == 1) {
+      // For single-image patients, collapse image-level variance
+      beta_local[s] = beta_indiv[:, sample_to_indiv[s]] + 1e-6 * beta_local_raw[s];
+    } else {
+      // For multi-image patients, use full hierarchical variance
+      beta_local[s] = beta_indiv[:, sample_to_indiv[s]] + sigma_beta_local * beta_local_raw[s];
+    }
   }
 }
 
@@ -158,13 +180,18 @@ model {
   }
 
   // --- Priors on scale parameters ---
-  if (num_pt_groups > 0) {
+  if (num_pt_groups > 1) {
+    // Multiple groups: estimate between-group variance
     for (j in 1:num_pot) {
       sigma_beta_global[j] ~ normal(scale_sigma_betas[j], scale_sigma_betas[j]);
     }
     tau_alpha_global ~ normal(scale_sigma_alpha, 10);
     sigma_beta_indiv ~ normal(0, scale_sigmas);
+  } else if (num_pt_groups == 1) {
+    // Single group: no between-group variance to estimate
+    sigma_beta_indiv ~ normal(0, scale_sigmas);
   } else {
+    // No groups: beta_indiv has structured priors
     for (j in 1:num_pot) {
       sigma_beta_indiv[j] ~ normal(scale_sigma_betas[j], scale_sigma_betas[j]);
     }
