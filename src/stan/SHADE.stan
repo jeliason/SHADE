@@ -150,13 +150,13 @@ model {
   tau_alpha_indiv ~ normal(0, scale_sigmas);
 
   for (s in 1:n_samples) {
-    if (is_single_image_patient[s] == 1) {
-      // For single-image patients, collapse image-level variance (use tiny sigma to avoid numerical issues)
-      beta_local[s] ~ normal(beta_indiv[:, sample_to_indiv[s]], 1e-6);
-    } else {
+    // if (is_single_image_patient[s] == 1) {
+    //   // For single-image patients, collapse image-level variance (use tiny sigma to avoid numerical issues)
+    //   beta_local[s] ~ normal(beta_indiv[:, sample_to_indiv[s]], 1e-6);
+    // } else {
       // For multi-image patients, use full hierarchical variance
       beta_local[s] ~ normal(beta_indiv[:, sample_to_indiv[s]], sigma_beta_local);
-    }
+    // }
   }
 
   // --- Likelihood ---

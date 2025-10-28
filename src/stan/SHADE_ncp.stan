@@ -161,13 +161,13 @@ transformed parameters {
 
   // Non-centered parameterization for beta_local
   for (s in 1:n_samples) {
-    if (is_single_image_patient[s] == 1) {
-      // For single-image patients, collapse image-level variance
-      beta_local[s] = beta_indiv[:, sample_to_indiv[s]] + 1e-6 * beta_local_raw[s];
-    } else {
-      // For multi-image patients, use full hierarchical variance
+    // if (is_single_image_patient[s] == 1) {
+    //   // For single-image patients, collapse image-level variance
+    //   beta_local[s] = beta_indiv[:, sample_to_indiv[s]] + 1e-6 * beta_local_raw[s];
+    // } else {
+    //   // For multi-image patients, use full hierarchical variance
       beta_local[s] = beta_indiv[:, sample_to_indiv[s]] + sigma_beta_local * beta_local_raw[s];
-    }
+    // }
   }
 }
 
