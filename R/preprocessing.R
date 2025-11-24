@@ -17,14 +17,18 @@
 #'        If provided, these will be used instead of generating new quadrature schemes internally.
 #'        List names must match the levels of `image_id`. Useful when you need to create covariates that
 #'        match specific quadrature points.
+#' @param potentials Optional list of custom potential (basis) functions. Each function should take a distance
+#'        and return a scalar value. If NULL (default), creates standard RBFs using make_rbfs() with the
+#'        n_basis_functions, max_dist, and basis_function_sigma parameters. Useful for custom basis functions
+#'        such as truncated RBFs or alternative functional forms.
 #' @param path Optional directory path to write output files. If NULL, returns data in memory.
 #' @param mean_alpha Mean of prior on intercept (default: -10).
 #' @param scale_sigmas Scale for prior on interaction strengths (default: 5).
 #' @param scale_sigma_betas Scale for prior on feature coefficients (default: seq(5, 1, length.out = num_pot)).
 #' @param scale_sigma_alpha Scale for intercept prior (default: 5).
-#' @param n_basis_functions Number of RBF basis functions (default: 3).
-#' @param max_dist Maximum distance for RBF support (default: 75).
-#' @param basis_function_sigma Spread of RBF functions (default: 15).
+#' @param n_basis_functions Number of RBF basis functions (default: 3). Only used if potentials is NULL.
+#' @param max_dist Maximum distance for RBF support (default: 75). Only used if potentials is NULL.
+#' @param basis_function_sigma Spread of RBF functions (default: 15). Only used if potentials is NULL.
 #'
 #' @return A list with elements `stan_data`, `sparse_matrix`, and `metadata` if `path` is NULL.
 #' Otherwise, writes outputs and returns invisibly.
@@ -36,6 +40,7 @@ prepare_spatial_model_data <- function(
     type_idx = 1,
     covariate_list = NULL,
     quadrature_list = NULL,
+    potentials = NULL,
     path = NULL,
     mean_alpha = -10,
     scale_sigmas = 5,
@@ -94,13 +99,26 @@ prepare_spatial_model_data <- function(
       stop("Error constructing point pattern for a sample: ", conditionMessage(e))
     })
   })
-  
-  potentials <- make_rbfs(
-    n_basis_functions = n_basis_functions,
-    max_dist = max_dist,
-    basis_function_sigma = basis_function_sigma
-  )
-  
+
+  # Create potentials if not provided
+  if (is.null(potentials)) {
+    potentials <- make_rbfs(
+      n_basis_functions = n_basis_functions,
+      max_dist = max_dist,
+      basis_function_sigma = basis_function_sigma
+    )
+  } else {
+    # Validate custom potentials
+    if (!is.list(potentials)) {
+      stop("potentials must be a list of functions")
+    }
+    if (!all(sapply(potentials, is.function))) {
+      stop("All elements of potentials must be functions")
+    }
+    # Update n_basis_functions to match provided potentials
+    n_basis_functions <- length(potentials)
+  }
+
   if (is.null(scale_sigma_betas)) {
     scale_sigma_betas <- seq(5, 1, length.out = n_basis_functions)
   }

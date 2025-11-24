@@ -12,6 +12,9 @@ prepare_spatial_model_data(
   patient_metadata,
   n_dummy = 1000,
   type_idx = 1,
+  covariate_list = NULL,
+  quadrature_list = NULL,
+  potentials = NULL,
   path = NULL,
   mean_alpha = -10,
   scale_sigmas = 5,
@@ -37,6 +40,20 @@ prepare_spatial_model_data(
 
 \item{type_idx}{Index of the cell type to model (default: 1).}
 
+\item{covariate_list}{Optional named list of covariate matrices, one per image. Each matrix should have
+one row per quadrature point (data + dummy points for the focal cell type) and one column per covariate.
+List names must match the levels of `image_id`. If NULL (default), no covariates are included.}
+
+\item{quadrature_list}{Optional named list of pre-made quadrature schemes (from make_quadrature), one per image.
+If provided, these will be used instead of generating new quadrature schemes internally.
+List names must match the levels of `image_id`. Useful when you need to create covariates that
+match specific quadrature points.}
+
+\item{potentials}{Optional list of custom potential (basis) functions. Each function should take a distance
+and return a scalar value. If NULL (default), creates standard RBFs using make_rbfs() with the
+n_basis_functions, max_dist, and basis_function_sigma parameters. Useful for custom basis functions
+such as truncated RBFs or alternative functional forms.}
+
 \item{path}{Optional directory path to write output files. If NULL, returns data in memory.}
 
 \item{mean_alpha}{Mean of prior on intercept (default: -10).}
@@ -47,11 +64,11 @@ prepare_spatial_model_data(
 
 \item{scale_sigma_alpha}{Scale for intercept prior (default: 5).}
 
-\item{n_basis_functions}{Number of RBF basis functions (default: 3).}
+\item{n_basis_functions}{Number of RBF basis functions (default: 3). Only used if potentials is NULL.}
 
-\item{max_dist}{Maximum distance for RBF support (default: 75).}
+\item{max_dist}{Maximum distance for RBF support (default: 75). Only used if potentials is NULL.}
 
-\item{basis_function_sigma}{Spread of RBF functions (default: 15).}
+\item{basis_function_sigma}{Spread of RBF functions (default: 15). Only used if potentials is NULL.}
 }
 \value{
 A list with elements `stan_data`, `sparse_matrix`, and `metadata` if `path` is NULL.
