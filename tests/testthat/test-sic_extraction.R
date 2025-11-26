@@ -165,7 +165,7 @@ test_that("compute_sic_posterior validates fit object", {
 
   expect_error(
     compute_sic_posterior(fake_fit, fake_prep),
-    "fit must be a CmdStanMCMC object"
+    "fit must be a CmdStanMCMC or CmdStanVB object"
   )
 })
 

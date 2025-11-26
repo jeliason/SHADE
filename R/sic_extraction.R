@@ -72,8 +72,8 @@ compute_sic_posterior <- function(fit,
   # Validate inputs
   level <- match.arg(level)
 
-  if (!inherits(fit, "CmdStanMCMC")) {
-    stop("fit must be a CmdStanMCMC object from run_SHADE_model()")
+  if (!inherits(fit, "CmdStanMCMC") && !inherits(fit, "CmdStanVB")) {
+    stop("fit must be a CmdStanMCMC or CmdStanVB object from run_SHADE_model()")
   }
 
   if (!is.list(prep) || !all(c("stan_data", "metadata") %in% names(prep))) {
@@ -88,10 +88,12 @@ compute_sic_posterior <- function(fit,
   n_basis <- length(potentials)
 
   # Determine target and source types
-  # Target is the focal type (last in the types list based on type_idx)
-  target_idx <- prep$stan_data$num_types
-  target_type <- all_types[target_idx]
-  source_types <- all_types[-target_idx]
+  # Target is the focal type stored in metadata
+  target_type <- metadata$focal_type
+  if (is.null(target_type)) {
+    stop("focal_type not found in metadata. Please re-run prepare_spatial_model_data() with updated package.")
+  }
+  source_types <- setdiff(all_types, target_type)
 
   # Filter sources if specified
   if (!is.null(sources)) {

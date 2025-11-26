@@ -138,7 +138,7 @@ plot_spatial_interaction_curves <- function(fit, prep, true_params = NULL, dista
 
   # Get cell type information for labeling
   all_types <- prep$metadata$types
-  target_type <- all_types[prep$stan_data$num_types]
+  target_type <- prep$metadata$focal_type
 
   # Rename columns for compatibility with plotting code
   plot_data <- plot_data %>%
@@ -154,31 +154,37 @@ plot_spatial_interaction_curves <- function(fit, prep, true_params = NULL, dista
   
   # Add true curves if provided
   if (!is.null(true_params) && !is.null(true_params$betas_global)) {
+    # Extract metadata for true curve computation
+    source_types <- setdiff(all_types, target_type)
+    n_source_types <- length(source_types)
+    n_groups <- prep$stan_data$num_pt_groups
+    n_basis <- prep$metadata$n_basis_functions
+
     # Create design matrix using true basis functions
     true_basis <- true_params$basis_functions
-    x_des_true <- lapply(true_basis, function(pot) pot(x_seq)) %>% 
+    x_des_true <- lapply(true_basis, function(pot) pot(distance_seq)) %>%
       do.call(cbind, .)
-    
+
     # Compute true curves for each group and source type
     true_data <- lapply(1:n_groups, function(group_i) {
       lapply(1:n_source_types, function(source_i) {
         coeff_start <- (source_i - 1) * n_basis + 1
         coeff_end <- source_i * n_basis
         coeff_indices <- coeff_start:coeff_end + 1  # +1 to skip intercept
-        
+
         beta_true <- true_params$betas_global[coeff_indices, group_i]
         lp_true <- as.vector(x_des_true %*% beta_true)
-        
+
         data.frame(
-          x = x_seq,
+          x = distance_seq,
           true_val = lp_true,
           group = paste0("Group ", group_i),
           source_type = source_types[source_i],
           interaction = paste0(source_types[source_i], " → ", target_type)
         )
-      }) %>% 
+      }) %>%
         do.call(rbind, .)
-    }) %>% 
+    }) %>%
       do.call(rbind, .)
     
     # Combine estimated and true data for plotting

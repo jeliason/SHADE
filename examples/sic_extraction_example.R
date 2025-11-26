@@ -171,7 +171,7 @@ band_widths <- sics_comparison %>%
     max_width = max(width),
     .groups = "drop"
   ) %>%
-  pivot_wider(
+  tidyr::pivot_wider(
     names_from = band_type,
     values_from = c(mean_width, max_width)
   )
@@ -231,8 +231,8 @@ print(p3)
 # Example: Compute difference between groups
 cat("\nComputing group differences...\n")
 group_comparison <- sics_posterior %>%
-  select(distance, source, level_name, sic) %>%
-  pivot_wider(names_from = level_name, values_from = sic) %>%
+  dplyr::select(distance, source, level_name, sic) %>%
+  tidyr::pivot_wider(names_from = level_name, values_from = sic) %>%
   mutate(
     diff = `Group 2` - `Group 1`,
     diff_mean = E(diff),
@@ -240,7 +240,7 @@ group_comparison <- sics_posterior %>%
   )
 
 cat("Posterior probability that Treatment > Control:\n")
-print(group_comparison %>% select(distance, source, prob_greater) %>% head(10))
+print(group_comparison %>% dplyr::select(distance, source, prob_greater) %>% head(10))
 
 # ==============================================================================
 # 5. PATIENT-LEVEL ANALYSIS

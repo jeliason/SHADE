@@ -276,6 +276,8 @@ prepare_spatial_model_data <- function(
     potentials = potentials,
     spots = unique(spots_pt$Spot),
     types = unique_types,
+    focal_type = type,
+    n_basis_functions = n_basis_functions,
     sample_to_indiv = sample_to_indiv,
     indiv_to_group = indiv_to_group,
     n_covariates = n_covariates,
