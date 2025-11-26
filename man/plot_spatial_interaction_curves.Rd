@@ -33,6 +33,6 @@ A ggplot object showing the SICs with credible intervals, faceted by source-targ
 Creates a faceted plot showing the estimated group-level Spatial Interaction Curves (SICs) from a SHADE model fit.
 The SICs represent how the expected density of the target cell type varies with distance
 from each source cell type, across different groups if present. Each facet shows the SIC for
-a specific source-target cell type interaction. Can optionally compare with true curves 
+a specific source-target cell type interaction. Can optionally compare with true curves
 if simulation parameters are provided.
 }

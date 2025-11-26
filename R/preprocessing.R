@@ -10,14 +10,25 @@
 #' @param patient_metadata A data frame with columns: 'Spot', 'Patient' and'Group'.
 #' @param n_dummy Number of dummy points for quadrature (default: 1000).
 #' @param type_idx Index of the cell type to model (default: 1).
+#' @param covariate_list Optional named list of covariate matrices, one per image. Each matrix should have
+#'        one row per quadrature point (data + dummy points for the focal cell type) and one column per covariate.
+#'        List names must match the levels of `image_id`. If NULL (default), no covariates are included.
+#' @param quadrature_list Optional named list of pre-made quadrature schemes (from make_quadrature), one per image.
+#'        If provided, these will be used instead of generating new quadrature schemes internally.
+#'        List names must match the levels of `image_id`. Useful when you need to create covariates that
+#'        match specific quadrature points.
+#' @param potentials Optional list of custom potential (basis) functions. Each function should take a distance
+#'        and return a scalar value. If NULL (default), creates standard RBFs using make_rbfs() with the
+#'        n_basis_functions, max_dist, and basis_function_sigma parameters. Useful for custom basis functions
+#'        such as truncated RBFs or alternative functional forms.
 #' @param path Optional directory path to write output files. If NULL, returns data in memory.
 #' @param mean_alpha Mean of prior on intercept (default: -10).
 #' @param scale_sigmas Scale for prior on interaction strengths (default: 5).
 #' @param scale_sigma_betas Scale for prior on feature coefficients (default: seq(5, 1, length.out = num_pot)).
 #' @param scale_sigma_alpha Scale for intercept prior (default: 5).
-#' @param n_basis_functions Number of RBF basis functions (default: 3).
-#' @param max_dist Maximum distance for RBF support (default: 75).
-#' @param basis_function_sigma Spread of RBF functions (default: 15).
+#' @param n_basis_functions Number of RBF basis functions (default: 3). Only used if potentials is NULL.
+#' @param max_dist Maximum distance for RBF support (default: 75). Only used if potentials is NULL.
+#' @param basis_function_sigma Spread of RBF functions (default: 15). Only used if potentials is NULL.
 #'
 #' @return A list with elements `stan_data`, `sparse_matrix`, and `metadata` if `path` is NULL.
 #' Otherwise, writes outputs and returns invisibly.
@@ -27,6 +38,9 @@ prepare_spatial_model_data <- function(
     patient_metadata,
     n_dummy = 1000,
     type_idx = 1,
+    covariate_list = NULL,
+    quadrature_list = NULL,
+    potentials = NULL,
     path = NULL,
     mean_alpha = -10,
     scale_sigmas = 5,
@@ -85,21 +99,104 @@ prepare_spatial_model_data <- function(
       stop("Error constructing point pattern for a sample: ", conditionMessage(e))
     })
   })
-  
-  potentials <- make_rbfs(
-    n_basis_functions = n_basis_functions,
-    max_dist = max_dist,
-    basis_function_sigma = basis_function_sigma
-  )
-  
+
+  # Create potentials if not provided
+  if (is.null(potentials)) {
+    potentials <- make_rbfs(
+      n_basis_functions = n_basis_functions,
+      max_dist = max_dist,
+      basis_function_sigma = basis_function_sigma
+    )
+  } else {
+    # Validate custom potentials
+    if (!is.list(potentials)) {
+      stop("potentials must be a list of functions")
+    }
+    if (!all(sapply(potentials, is.function))) {
+      stop("All elements of potentials must be functions")
+    }
+    # Update n_basis_functions to match provided potentials
+    n_basis_functions <- length(potentials)
+  }
+
   if (is.null(scale_sigma_betas)) {
     scale_sigma_betas <- seq(5, 1, length.out = n_basis_functions)
   }
-  
-  Qs <- lapply(pats, make_quadrature, n_dummy = n_dummy)
-  
+
+  # Use provided quadrature schemes or create new ones
+  if (!is.null(quadrature_list)) {
+    # Validate quadrature_list
+    if (!is.list(quadrature_list)) {
+      stop("quadrature_list must be a list of quadrature schemes")
+    }
+
+    image_levels <- levels(image_id)
+    if (is.null(names(quadrature_list))) {
+      stop("quadrature_list must be a named list with names matching levels of image_id")
+    }
+
+    if (!all(names(quadrature_list) %in% image_levels)) {
+      missing <- setdiff(names(quadrature_list), image_levels)
+      stop(sprintf("quadrature_list contains names not in image_id levels: %s",
+                   paste(missing, collapse = ", ")))
+    }
+
+    if (!all(image_levels %in% names(quadrature_list))) {
+      missing <- setdiff(image_levels, names(quadrature_list))
+      stop(sprintf("quadrature_list is missing quadrature schemes for image_id levels: %s",
+                   paste(missing, collapse = ", ")))
+    }
+
+    # Verify all are valid quadrature objects
+    if (!all(sapply(quadrature_list, inherits, "quad"))) {
+      stop("All elements of quadrature_list must be quadrature schemes (class 'quad')")
+    }
+
+    Qs <- quadrature_list
+  } else {
+    Qs <- lapply(pats, make_quadrature, n_dummy = n_dummy)
+  }
+
   type <- unique_types[type_idx]
-  
+
+  # Validate covariate_list if provided
+  if (!is.null(covariate_list)) {
+    if (!is.list(covariate_list)) {
+      stop("covariate_list must be a list of matrices")
+    }
+
+    # Check that list names match image_id levels
+    image_levels <- levels(image_id)
+    if (is.null(names(covariate_list))) {
+      stop("covariate_list must be a named list with names matching levels of image_id")
+    }
+
+    if (!all(names(covariate_list) %in% image_levels)) {
+      missing <- setdiff(names(covariate_list), image_levels)
+      stop(sprintf("covariate_list contains names not in image_id levels: %s",
+                   paste(missing, collapse = ", ")))
+    }
+
+    if (!all(image_levels %in% names(covariate_list))) {
+      missing <- setdiff(image_levels, names(covariate_list))
+      stop(sprintf("covariate_list is missing matrices for image_id levels: %s",
+                   paste(missing, collapse = ", ")))
+    }
+
+    # Check that all covariate matrices have the same number of columns
+    n_cols <- sapply(covariate_list, ncol)
+    if (length(unique(n_cols)) > 1) {
+      stop("All covariate matrices must have the same number of columns (covariates)")
+    }
+
+    # Check that column names are consistent across images
+    col_names_list <- lapply(covariate_list, colnames)
+    first_names <- col_names_list[[1]]
+    if (!all(sapply(col_names_list, function(x) identical(x, first_names)))) {
+      warning("Covariate matrices have inconsistent column names across images")
+    }
+  }
+
   offset <- lapply(Qs, function(Q) {
     log(spatstat.geom::intensity(Q$dummy)) |>
       tibble::enframe() |>
@@ -107,8 +204,13 @@ prepare_spatial_model_data <- function(
       dplyr::filter(name == type) |>
       dplyr::pull(value)
   }) |> unlist()
-  
-  data_lists <- lapply(Qs, function(Q) make_data(Q, potentials, type, verbose = FALSE))
+
+  # Pass covariates to make_data if provided
+  data_lists <- lapply(names(Qs), function(img_name) {
+    Q <- Qs[[img_name]]
+    cov <- if (!is.null(covariate_list)) covariate_list[[img_name]] else NULL
+    make_data(Q, potentials, type, covariates = cov, verbose = FALSE)
+  })
   
   x_cells <- do.call(rbind, lapply(data_lists, \(d) d$data))
   is_cell <- unlist(lapply(data_lists, \(d) d$response))
@@ -161,13 +263,31 @@ prepare_spatial_model_data <- function(
     grainsize = 1
   )
   
+  # Identify which columns are covariates
+  n_dispersion_cols <- n_basis_functions * (length(unique_types) - 1)
+  n_total_cols <- ncol(x_cells)
+  has_covariates <- !is.null(covariate_list)
+  n_covariates <- if (has_covariates) n_total_cols - n_dispersion_cols - 1 else 0  # -1 for intercept
+
+  covariate_cols <- if (has_covariates) {
+    # Column indices for covariates (after intercept and dispersions)
+    (n_dispersion_cols + 2):n_total_cols
+  } else {
+    integer(0)
+  }
+
   metadata <- list(
     coef_names = colnames(x_cells),
     potentials = potentials,
     spots = unique(spots_pt$Spot),
     types = unique_types,
+    focal_type = type,
+    n_basis_functions = n_basis_functions,
     sample_to_indiv = sample_to_indiv,
-    indiv_to_group = indiv_to_group
+    indiv_to_group = indiv_to_group,
+    n_covariates = n_covariates,
+    covariate_cols = covariate_cols,
+    covariate_names = if (has_covariates) colnames(x_cells)[covariate_cols] else character(0)
   )
   
   if (!is.null(path)) {
