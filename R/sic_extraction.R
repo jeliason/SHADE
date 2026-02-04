@@ -153,8 +153,9 @@ compute_sic_posterior <- function(fit,
   for (group_i in indices) {
     for (source in source_types) {
       # Find coefficient indices for this target-source pair
-      coef_pattern <- paste0("_", target_type, "_", source)
-      coef_ix <- grep(coef_pattern, coef_names, fixed = TRUE)
+      # Use $ anchor to match exact source name at end (avoids matching cd4tcells_ICOS when looking for cd4tcells)
+      coef_pattern <- paste0("_", target_type, "_", source, "$")
+      coef_ix <- grep(coef_pattern, coef_names)
 
       if (length(coef_ix) == 0) {
         warning(sprintf("No coefficients found for %s -> %s", source, target_type))
@@ -221,8 +222,9 @@ compute_sic_posterior <- function(fit,
   for (patient_i in indices) {
     for (source in source_types) {
       # Find coefficient indices for this target-source pair
-      coef_pattern <- paste0("_", target_type, "_", source)
-      coef_ix <- grep(coef_pattern, coef_names, fixed = TRUE)
+      # Use $ anchor to match exact source name at end (avoids matching cd4tcells_ICOS when looking for cd4tcells)
+      coef_pattern <- paste0("_", target_type, "_", source, "$")
+      coef_ix <- grep(coef_pattern, coef_names)
 
       if (length(coef_ix) == 0) {
         warning(sprintf("No coefficients found for %s -> %s", source, target_type))
@@ -283,8 +285,9 @@ compute_sic_posterior <- function(fit,
   for (image_i in indices) {
     for (source in source_types) {
       # Find coefficient indices for this target-source pair
-      coef_pattern <- paste0("_", target_type, "_", source)
-      coef_ix <- grep(coef_pattern, coef_names, fixed = TRUE)
+      # Use $ anchor to match exact source name at end (avoids matching cd4tcells_ICOS when looking for cd4tcells)
+      coef_pattern <- paste0("_", target_type, "_", source, "$")
+      coef_ix <- grep(coef_pattern, coef_names)
 
       if (length(coef_ix) == 0) {
         warning(sprintf("No coefficients found for %s -> %s", source, target_type))
