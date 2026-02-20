@@ -97,14 +97,23 @@ fit <- run_SHADE_model(
   threads = 2
 )
 
-# Extract and summarize posterior estimates
-rvars <- as_draws_rvars(fit$draws())
-summary <- summarise_draws(rvars$beta_global)
-print(summary)
+# Extract group-level SICs with simultaneous 95% credible bands
+group_sics <- extract_group_sics(fit, prep)
 
-# Plot Spatial Interaction Curves (SICs)
-plot_spatial_interaction_curves(fit, prep, distance_range = c(0, 100))
+# Extract patient-level SICs
+patient_sics <- extract_patient_sics(fit, prep)
+
+# Plot group-level SICs
+ggplot(group_sics, aes(x = distance, y = sic_mean, color = level_name)) +
+  geom_ribbon(aes(ymin = sic_lower, ymax = sic_upper, fill = level_name), alpha = 0.2) +
+  geom_line() +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  facet_wrap(~source) +
+  theme_minimal() +
+  labs(x = "Distance (µm)", y = "SIC (log-intensity)")
 ```
+
+For more fine-grained control, `compute_sic_posterior()` returns raw posterior `rvar` objects that can be passed to `add_simultaneous_bands()` or `add_pointwise_bands()`.
 
 For a complete end-to-end example, see the file `vignettes/Introduction.qmd`.
 
@@ -112,11 +121,12 @@ For a complete end-to-end example, see the file `vignettes/Introduction.qmd`.
 
 SHADE includes tools for:
 
--   Preparing spatial point pattern data for hierarchical analysis
--   Defining flexible spatial interaction features via basis functions
--   Fitting multilevel spatial point process models using Stan
--   Summarizing posterior distributions of interaction curves
--   Comparing results across images, patients, and groups
+-   **Data preparation:** Convert spatial point pattern data into hierarchical model inputs (`prepare_spatial_model_data()`)
+-   **Simulation:** Generate synthetic spatial data with known directional interactions for validation (`simulate_spatial_data()`)
+-   **Model fitting:** Fit multilevel spatial point process models via Stan, with MCMC or variational inference (`run_SHADE_model()`)
+-   **SIC extraction:** Extract Spatial Interaction Curves at the group, patient, or image level (`extract_group_sics()`, `extract_patient_sics()`, `extract_image_sics()`)
+-   **Uncertainty quantification:** Compute simultaneous or pointwise credible bands for SICs (`add_simultaneous_bands()`, `add_pointwise_bands()`)
+-   **Prediction:** Generate spatial predictions from fitted models (`run_SHADE_gq()`)
 
 ## Citation and References
 
