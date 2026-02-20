@@ -16,7 +16,7 @@ Additionally, biological data from spatial imaging studies are often hierarchica
 
 The model is implemented in Stan and uses a logistic regression approximation to estimate conditional intensity functions efficiently, even for large high-resolution datasets.
 
-For more technical details and case studies, please see [our preprint](https://doi.org/10.1101/2025.06.24.661393) and [our repo](https://github.com/jeliason/shade_paper_code) for reproducing analyses and figures from that manuscript.
+For more technical details and case studies, please see [our paper in PLOS Computational Biology](https://doi.org/10.1371/journal.pcbi.1013930) and [our repo](https://github.com/jeliason/shade_paper_code) for reproducing analyses and figures from that manuscript.
 
 ## Installation
 
@@ -120,16 +120,18 @@ SHADE includes tools for:
 
 ## Citation and References
 
-If you use SHADE in your work, please cite the accompanying [preprint](https://doi.org/10.1101/2025.06.24.661393):
+If you use SHADE in your work, please cite the accompanying [paper](https://doi.org/10.1371/journal.pcbi.1013930):
 
 ``` bibtex
-@misc{
-  title = {{{SHADE}}: {{A Multilevel Bayesian Approach}} to {{Modeling Directional Spatial Associations}} in {{Tissues}}},
+@article{eliason2026shade,
+  title = {{SHADE}: A multilevel {Bayesian} framework for modeling directional spatial interactions in tissue microenvironments},
   author = {Eliason, Joel and Peruzzi, Michele and Rao, Arvind},
-  year = {2025},
-  month = jun,
-  publisher = {Cold Spring Harbor Laboratory},
-  doi = {10.1101/2025.06.24.661393},
+  journal = {PLOS Computational Biology},
+  volume = {22},
+  number = {2},
+  pages = {e1013930},
+  year = {2026},
+  doi = {10.1371/journal.pcbi.1013930},
 }
 ```
 
